@@ -53,7 +53,7 @@ mostrar_fuente(S1)
 fd = pd.concat([listaDeFrames[i] for i in range(len(listaDeFrames))], ignore_index=True) # Concateno los frames para crear un solo frame.
 # print(fd.to_markdown())
 
-# Manipulo el DataFrame para
+# Manipulo el DataFrame para guardar el Porcentaje e Información de cada Simbolo.
 fd = fd.set_index('Símbolo')
 porcentaje = fd.index.value_counts(normalize=True)
 print("El porcentaje de cada simbolo es: \n")
