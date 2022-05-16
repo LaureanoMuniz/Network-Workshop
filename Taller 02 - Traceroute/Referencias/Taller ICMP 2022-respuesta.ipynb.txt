@@ -1,0 +1,325 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "166eca54-31f9-40ad-a056-767173079dcd",
+   "metadata": {},
+   "source": [
+    "# Taller ICMP 2022"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9d157a4b-ba8d-43dd-9f46-6d13dc5768bb",
+   "metadata": {},
+   "source": [
+    "Para el siguiente taller utilizaremos `Scapy` para construir, enviar y recibir paquetes. Luego, a partir de los mensajes del protocolo ICMP, implementaremos una herramienta que nos permita seguir por cuales nodos IP pasa un paquete hasta llegar (si llega) a destino.\n",
+    "\n",
+    "Los ejercicios los guiarán por diferentes consignas para que luego puedan entender el código necesario del TP. Debajo de cada ejercicio está la respuesta, **recomendamos fuertemente intentar hacer el ejercicio antes de ver la respuesta**."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "421cb924-2707-45a6-8713-8682e705543e",
+   "metadata": {
+    "jupyter": {
+     "source_hidden": true
+    }
+   },
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "from scapy.all import *\n",
+    "from time import *"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5f61f01e-2636-40f3-a262-58c07b16b918",
+   "metadata": {},
+   "source": [
+    "## Ejercicio 1: Entrada en calor\n",
+    "\n",
+    "Vamos a recordar algunas cosas que vimos en el taller 1. \n",
+    "\n",
+    "`Scapy` es una herramienta útil para el análisis de redes, capturar, enviar y recibir paquetes. Existen distintas funciones que nos pueden ser útiles a la hora de programar un script con Scapy, algunas de estas son:\n",
+    "\n",
+    " * `ls(PROTOCOLO)`: Si hacemos ls(Ether) nos mostrará los distintos campos de los frames Ethers.\n",
+    " * `lsc()`: Nos devuelve las distintas funciones de Scapy\n",
+    " * Documentación: https://scapy.readthedocs.io/en/latest/usage.html\n",
+    " \n",
+    "\n",
+    "1. Crear un paquete Ether broadcast.\n",
+    "2. Encapsular un paquete IP dentro de un paquete Ether. La dirección destino del paquete IP tiene que ser la IP de una página web. (Hint: Qué pasa si pongo al dirección web o URL?)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "cac8e8c4-4436-4fc3-8588-387abb181d09",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "Ether().show()\n",
+    "Ether()/IP(dst='www.google.com')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b263101e-d78c-4b75-8e35-a958d5bd10f8",
+   "metadata": {},
+   "source": [
+    "## Ejercicio 2: Enviar paquetes\n",
+    "\n",
+    "Scapy no sólo permite hacer sniffing, si no que permite enviar paquetes a la red.\n",
+    "Para esto nos provee dos funciones `send()` y `sendp()`. Ambas se utilizan para enviar mensajes, la diferencia es que el primero va por capa 3 (Red) mientras que el segundo por Capa 2 (Medios compartidos).\n",
+    "\n",
+    "*Si no hay respuesta el valor será None*\n",
+    "\n",
+    "\n",
+    "1. Crear un paquete IP con destino a alguna universidad del mundo. \n",
+    "2. Enviar el paquete de 2."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7147e5fa-8746-43cc-a252-7588d2e3237c",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "p = IP(src=\"ox.ac.uk\")\n",
+    "send(p)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "53a46ea9-e11b-4cf3-9ab1-631e35fe7543",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## Ejercicio 3: Enviar y recibir paquetes\n",
+    "\n",
+    "Scapy permite enviar paquetes a la red y obtener la respuesta. Para esto nos provee dos funciones `sr()` y `sr1()`. Ambas se utilizan para enviar mensajes y recibir respuestas. La diferencia de `sr1` es que retorna *un* solo paquete. \n",
+    "\n",
+    "Para poder enviar y recibir paquetes `sr()` requiere que los paquetes sean de Capa 3 (e.g. IP) mientras que si necesitamos enviar y recibir por Capa 2 podemos usar `srp()`\n",
+    "\n",
+    "*Si no hay respuesta el valor será None*\n",
+    "\n",
+    "1. Crear un paquete ICMP con destino a alguna universidad del mundo (hint: ICMP se encapsula con IP).\n",
+    "2. Enviar el paquete de 2. e imprimir la respuesta."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "76e85343-2dd7-45eb-9cfb-6b493f384662",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "p=IP(dst='ox.ac.uk')\n",
+    "p2=sr1(IP(dst=\"ox.ac.uk\")/ICMP())\n",
+    "p2.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5fc95c9f-68be-49a9-b761-030b17444031",
+   "metadata": {},
+   "source": [
+    "## ICMP: Echo Request (type 8) y Echo Reply (type 0)\n",
+    "\n",
+    "Estos mensajes son utilizados para el test de diagnóstico más básico de ICMP, el **ping**. Este test se utiliza conocer si un host es alcanzable. Sin embargo, esta herramienta no devuelve suficiente información. No todos los dominios devuelven una respuesta, por distintos motivos que veremos más adelante.\n",
+    "\n",
+    "## Ejercicio 4: Implementar la herramienta PING\n",
+    "\n",
+    "1. Crear un paquete ICMP con type=8.\n",
+    "2. Enviar (sr()) a alguna universidad. Además agregar como parámetro timeout=1 en caso de que la universidad no responda.\n",
+    "3. Completar la función para que dado una URL escrita como string, mande un mensaje al dominio y devuelva la respuesta."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c865c224-53e8-40e5-92fc-57582c6525be",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def ping(url):\n",
+    "    p = IP(dst=url)/ICMP(type=8)\n",
+    "    r = sr(p, timeout=1)\n",
+    "    print(r)\n",
+    "ping('www.google.com')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1d403bbb-d0c0-4255-a8b1-2ffa9c4888d3",
+   "metadata": {},
+   "source": [
+    "## Destination Unreachable (type 3)\n",
+    "\n",
+    "En el caso donde hayan 3 routers A--B--C, el router A manda un mensaje a C, pero al llegar al router B, este no encuentra la ruta correcta al router C. Cómo se enterará A de que esto sucedió? Es eficiente que A siga mandando a ciegas todo el tiempo?\n",
+    "\n",
+    "Para esto, se implementa el mensaje ICMP de Destination Unreachable. Este encapsula una parte del datagrama IP que no se entregó. \n",
+    "\n",
+    "**No hay garantías que este mensaje se responda siempre**\n",
+    "\n",
+    "Tiene varios subtipos:\n",
+    "* Destination network unreachable (code=0): Si el router no sabe cómo rutear el paquete (e.g. router B no tiene una ruta programada para la red destino)\n",
+    "* Destination host unreachable (code=1): El host destino está en la red del router pero este determinó que no puede llegar al host.\n",
+    "* Destination port unreachable (code=3): El mensaje llegó a destino pero el puerto no tiene un proceso asociado, en este caso es el host destino quien responde.\n",
+    "\n",
+    "## Ejercicio 5: Conseguir un destination unreachable.\n",
+    "\n",
+    "\n",
+    "1. Crear un paquete ICMP cuya respuesta sea Destination Unreachable con subtipo Destination Network Unreachable.\n",
+    "2. Intentar con diferentes IPs conseguir un Destination Unreachable, esto puede ser difícil, si después de varios intentos no sale pasar al siguiente ejercicio."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c7c43184-3a08-4702-aeed-0259b3f17f15",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "p = ICMP(type=3, code=0)\n",
+    "p.show()\n",
+    "a = sr1(IP(dst=\"192.168.0.7/32\")/ICMP(type=8), timeout=1)\n",
+    "print(a)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f292f0ac-3d7b-4ba1-9e7c-0c1908ec1b50",
+   "metadata": {},
+   "source": [
+    "## Time exceeded (type=11)\n",
+    "\n",
+    "* Si se genera un loop, un datagrama IP podría ciclar infinitamente por la red y generar tráfico. \n",
+    "* Una posible solución es agregar un campo al datagrama denominado **T**ime-**t**o-**l**ive o TTL.\n",
+    "* Cada host que recibe un datagrama IP, si este no es para él, decrementará un valor al TTL y lo enviará al próximo salto, si llega a 0, lo descarta.\n",
+    "\n",
+    "Por lo tanto, otros de los tipos de paquetes del protocolo ICMP es el \"Time exceeded\" e informa cuándo el TTL del datagrama IP llega a 0.\n",
+    "\n",
+    "## Ejercicio 6: Generar un time exceeded.\n",
+    "\n",
+    "1. Crear el paquete ICMP cuyo tipo sea el de time exceeded.\n",
+    "2. Crear un paquete IP con destino a una universidad agregándole el parámetro ttl que recibe un valor numérico.\n",
+    "3. Enviar el paquete del ejercicio 2 con distintos TTLs para conseguir un time exceeded.\n",
+    "4. Correr el comando `traceroute()` con parámetro una URL."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "827da78c-4bfa-4039-a93d-182fe85f4736",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "p1 = ICMP(type=11)\n",
+    "p2 = IP(dst='ox.ac.uk', ttl=1)/ICMP()\n",
+    "sr1(p2, timeout=1)\n",
+    "\n",
+    "def try_ttl():\n",
+    "    for i in range(0,15):\n",
+    "        p2 = IP(dst='ox.ac.uk', ttl=i)/ICMP()\n",
+    "        print(p2[ICMP].type)\n",
+    "        \n",
+    "try_ttl()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a19fa1cc-14bd-4048-b220-3f9e7456d674",
+   "metadata": {},
+   "source": [
+    "## Ejercicio 7: Implementar traceroute\n",
+    "\n",
+    "En el siguiente ejercicio construiremos una herramienta utilizada para el diagnóstico de red denominada **traceroute**. Esta herramienta permite conocer la ruta o dispositivos por los que \"salta\" (hop) un datagrama IP antes de llegar a destino (si es que llega). Existen distintas implementaciones, incluso, cada SO cuenta con la suya. Scapy por supuesto, también. \n",
+    "\n",
+    "Aprovechando lo que hicieron en los ejercicios anteriores, completar el código de abajo para que haga lo siguiente:\n",
+    "\n",
+    "1. Dado una URL destino (e.g. dc.uba.ar):\n",
+    "\n",
+    "    a) Calcular los RTTs entre cada salto que responda **Time Exceeded**.\n",
+    "    \n",
+    "    b) Mandar al menos 30 paquetes por cada TTL y por cada respuesta promediar el RTT de la IP que más responde.\n",
+    "    \n",
+    "    c) Calcular el RTT entre saltos restando los valores de RTT de saltos sucesivos.\n",
+    "            i. Si la diferencia da negativa se puede obviar este calculo y calcularlo con el próximo salto que de positivo."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0088ed7d-3320-487c-9cd6-321238116b0e",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "#!/usr/bin/env python3\n",
+    "\n",
+    "import sys\n",
+    "from scapy.all import *\n",
+    "from time import *\n",
+    "\n",
+    "def traceroute(url):\n",
+    "    responses = {}\n",
+    "    for i in range(2):\n",
+    "        print()\n",
+    "        for ttl in range(1,25):\n",
+    "            probe = IP(dst=url, ttl=ttl) / ICMP()\n",
+    "            t_i = time()\n",
+    "            ans = sr1(probe, verbose=False, timeout=0.8)\n",
+    "            t_f = time()\n",
+    "            rtt = (t_f - t_i)*1000\n",
+    "            if ans is not None:\n",
+    "\n",
+    "                if ttl not in responses: \n",
+    "                    responses[ttl] = []\n",
+    "                responses[ttl].append((ans.src, rtt))\n",
+    "\n",
+    "                if ttl in responses: \n",
+    "                    print(ttl, responses[ttl])"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
