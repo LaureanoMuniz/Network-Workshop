@@ -1,0 +1,2 @@
+Domain,Height,Failure proportion,Web Server IP,Mail Server IPs Path
+www.dc.uba.ar,3,0.0,157.92.27.128,./Resultados/www.dc.uba.ar-MailServerIPs.csv
