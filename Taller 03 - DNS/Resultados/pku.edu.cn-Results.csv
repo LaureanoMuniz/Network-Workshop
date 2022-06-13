@@ -1,0 +1,2 @@
+Domain,Height,Failure proportion,Web Server IP,Mail Server IPs Path
+pku.edu.cn,4,0.0,162.105.131.160,./Resultados/pku.edu.cn-MailServerIPs.csv
