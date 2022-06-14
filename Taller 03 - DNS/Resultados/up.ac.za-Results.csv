@@ -1,0 +1,2 @@
+Domain,Height,Failure proportion,Web Server IP,Mail Server IPs Path
+up.ac.za,4,0.2,137.215.10.220,./Resultados/up.ac.za-MailServerIPs.csv
